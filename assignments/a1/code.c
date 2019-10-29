@@ -9,7 +9,7 @@ int main()
 
     unsigned long p = 0x1;
 
-    printf("   p/0x%lx): %p \n", p, &p);
+    printf("   p(0x%lx): %p \n", p, &p);
 
     printf("\n\n /proc/%d/maps \n\n", pid);
     char command[50];
