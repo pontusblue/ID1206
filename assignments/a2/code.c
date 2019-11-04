@@ -9,16 +9,14 @@ int main()
 
     if(pid == 0)
     {
-        printf("I'm the child %d\n", getpid());
-        sleep(1);
+        return 42;
     }
     else
     {
-        printf("My child is called %d\n", pid);
-        wait(NULL);
-        printf("My child %d has been terminated :( says %d\n", pid, getpid());
+	int res;
+	wait(&res);
+	printf("the result was %d\n", WEXITSTATUS(res));
     }
-    printf("This is the end, says %d\n", getpid());
 
     return 0;
 }
