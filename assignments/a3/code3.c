@@ -1,37 +1,37 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
 
-int volatile count;
-
 void handler(int sig)
 {
     printf("signal %d ouch that hurt\n", sig);
-    count++;
+    exit(1);
+    return;
+}
+
+int not_so_good()
+{
+    int x = 0;
+    return 1 % x;
 }
 
 int main()
 {
     struct sigaction sa;
-    int pid = getpid();
 
-    printf("ok, let's go, kill me (%d) if you can!\n", pid);
+    printf("Ok, let's go - I'll catch my own error.\n");
 
     sa.sa_handler = handler;
     sa.sa_flags = 0;
     sigemptyset(&sa.sa_mask);
 
-    if(sigaction(SIGINT, &sa, NULL) != 0)
-    {
-        return 1;
-    }
+    /* and now we catch ... FPE signals */
+    sigaction(SIGFPE, &sa, NULL);
 
-    while(count != 4)
-    {
+    not_so_good();
 
-    }
-
-    printf("I've had enough!\n");
+    printf("Will probably not write this.\n");
     return 0;
 
 }
