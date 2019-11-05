@@ -3,11 +3,16 @@
 #include <signal.h>
 #include <unistd.h>
 
-void handler(int sig)
+int volatile done;
+
+void handler(int sig, siginfo_t *siginfo, void *context)
 {
     printf("signal %d ouch that hurt\n", sig);
-    exit(1);
-    return;
+    
+    printf("your UID is %d\n", siginfo->si_uid);
+    printf("your PID is %d\n", siginfo->si_pid);
+    
+    done = 1;
 }
 
 int not_so_good()
@@ -20,18 +25,22 @@ int main()
 {
     struct sigaction sa;
 
+    printf("My PID: %d\n", getpid());
     printf("Ok, let's go - I'll catch my own error.\n");
 
-    sa.sa_handler = handler;
-    sa.sa_flags = 0;
+    /* we're using the more elaborated sigaction handler */
+    sa.sa_flags = SA_SIGINFO;
+    sa.sa_sigaction = handler;
+
     sigemptyset(&sa.sa_mask);
 
-    /* and now we catch ... FPE signals */
-    sigaction(SIGFPE, &sa, NULL);
+    if(sigaction(SIGINT, &sa, NULL) != 0) {
+	return 1;
+    }
 
-    not_so_good();
+    while(!done) {}
 
-    printf("Will probably not write this.\n");
+    printf("Told you so!\n");
     return 0;
 
 }
