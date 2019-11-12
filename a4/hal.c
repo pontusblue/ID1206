@@ -8,7 +8,8 @@ MODULE_DESCRIPTION("Heuristically programmed ALgorithmic computer");
 
 static int __init hal_init(void)
 {
-	printk(KERN_INFO "I honestly think you ought to calm down;\n");
+here:
+	printk(KERN_INFO "I'm here %p\n", &&here);
 	return 0;
 }
 
