@@ -2,14 +2,25 @@
 #include <stdio.h>
 #include <time.h>
 
-#define PAGES (16)
+#define PAGES (64)
 #define REFS (1024*1024)
+#define PAGESIZE 64
 
 int main(int argc, char *argv[])
 {
-	
 	clock_t c_start, c_stop;
+	char *memory = malloc((long) PAGESIZE * PAGES);
 
+	for(int p = 0; p < PAGES; p++) {
+		long ref = (long) p * PAGESIZE;
+		// force the page to be allocated
+		memory[ref] += 1;
+	}
+
+	printf("#TLB experiment\n");
+	printf("#  page size = %d bytes\n", PAGESIZE);
+	printf("#  max pages = %d\n", PAGES);
+	printf("#  total number of references = %d Mi\n", (REFS/(1024*1024)));
 	printf("#pages\t proc\t sum\n");
 
 	for(int pages = 1; pages <= PAGES; pages += 1) {
@@ -22,8 +33,10 @@ int main(int argc, char *argv[])
 
 		for(int l = 0; l < loops; l++) {
 			for(int p = 0; p < pages; p++) {
-				/* dummy operation */
-				sum++;
+				// dummy replacement
+				long ref = (long) p * PAGESIZE;
+				sum += memory[ref];
+				// sum++;
 			}
 		}
 
