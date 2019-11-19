@@ -67,7 +67,7 @@ int simulate(int *seq, pte *table, int refs, int frms, int pgs)
 int main(int argc, char *argv[])
 {
 	// could be command line args
-	int refs = 10;
+	int refs = 1000000;
 	int pages = 100;
 
 	pte *table = (pte *)malloc(pages*sizeof(pte));
