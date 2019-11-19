@@ -1,12 +1,22 @@
-#include <stdio.>
+#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
 
+#define HIGH 20
+#define FREQ 80
+
 void init(int *sequence, int refs, int pages)
 {
+	int high = (int)(pages*((float)HIGH/100));
+
 	for(int i = 0; i < refs; i++) {
-		sequence[i] - rand() % pages;
+		if(rand() % 100 < FREQ) {
+			// the frequently case
+			sequence[i] = rand() % high;
+		} else {
+			sequence[i] = high + rand() % (pages - high);
+		}	
 	}
 }
 
