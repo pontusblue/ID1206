@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <time.h>
 
-#define PAGES (64)
+#define PAGES (4*1024)
 #define REFS (1024*1024)
-#define PAGESIZE 64
+#define PAGESIZE (4*1024)
 
 int main(int argc, char *argv[])
 {
@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 	printf("#  total number of references = %d Mi\n", (REFS/(1024*1024)));
 	printf("#pages\t proc\t sum\n");
 
-	for(int pages = 1; pages <= PAGES; pages += 1) {
+	for(int pages = 4; pages <= PAGES; pages *= 2) {
 
 		int loops = REFS / pages;
 
