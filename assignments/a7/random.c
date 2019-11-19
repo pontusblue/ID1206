@@ -6,6 +6,10 @@
 #define HIGH 20
 #define FREQ 80
 
+typedef struct pte {
+	int present;
+} pte;
+
 void init(int *sequence, int refs, int pages)
 {
 	int high = (int)(pages*((float)HIGH/100));
@@ -25,6 +29,8 @@ int main(int argc, char *argv[])
 	// could be command line args
 	int refs = 10;
 	int pages = 100;
+
+	pte *table = (pte *)malloc(pages*sizeof(pte));
 
 	int *sequence = (int*)malloc(refs*sizeof(int));
 
