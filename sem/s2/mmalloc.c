@@ -44,7 +44,7 @@ struct head *split(struct head *block, int size)
     splt->bsize = block->size;
     splt->bfree = block->free;
     splt->size = size + HEAD;
-    splt->free = FALSE;
+    splt->free = TRUE;
 
     struct head *aft = after(splt);
     aft->bsize = splt->size;
@@ -94,8 +94,6 @@ void detach(struct head *block)
 {
     if(block->next != NULL) {
         block->next->prev = block->prev;
-        block->next->bfree = block->prev->free;
-        block->next->bsize = block->prev->size;
     }
 
     if(block->prev != NULL) {
@@ -120,3 +118,22 @@ void insert(struct head *block)
     flist = newBlock;
 }
 
+void *dalloc(size_t request)
+{
+    if(request <= 0) {
+        return ...;
+    }
+    int size = adjust(request);
+    struct head *taken = find(size);
+    if(taken == NULL)
+    {
+        return NULL;
+    } else {
+        return ...;
+    }
+}
+
+int adjust(int size)
+{
+    
+}
