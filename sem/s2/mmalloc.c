@@ -61,3 +61,36 @@ struct head *new()
     struct head *new = mmap(NULL, ARENA,
             PROT_READ | PROT_WRITE,
             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+
+    if(new == MAP_FAILED) {
+        printf("mmap failed: error %d\n", errno);
+        return NULL;
+    }
+
+    // make room for head and dummy
+    uint size = ARENA - 2*HEAD;
+    
+    new->bfree = FALSE; // <<< FILL IN HERE
+    new->bsize = 0;
+    new->free  = TRUE;
+    new->size  = size;
+
+    struct head *sentinel = after(new); 
+
+    // only touch after the status fields
+    sentinel->bfree = TRUE;
+    sentinel->bsize = size;
+    sentinel->free  = FALSE;
+    sentinel->size  = 0;
+
+    // this is the only arena we have
+    arena = (struct head*)new;
+
+    return new;
+}
+
+srcut head *flist;
+
+void detach(struct head *block)
+{
+
