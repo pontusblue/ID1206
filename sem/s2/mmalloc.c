@@ -23,6 +23,7 @@ struct head
 #define ARENA (64*1024)
 
 struct head *arena = NULL;
+srcut head *flist;
 
 struct head *after(struct head *block)
 {
@@ -70,7 +71,7 @@ struct head *new()
     // make room for head and dummy
     uint size = ARENA - 2*HEAD;
     
-    new->bfree = FALSE; // <<< FILL IN HERE
+    new->bfree = FALSE;
     new->bsize = 0;
     new->free  = TRUE;
     new->size  = size;
@@ -89,8 +90,33 @@ struct head *new()
     return new;
 }
 
-srcut head *flist;
-
 void detach(struct head *block)
 {
+    if(block->next != NULL) {
+        block->next->prev = block->prev;
+        block->next->bfree = block->prev->free;
+        block->next->bsize = block->prev->size;
+    }
+
+    if(block->prev != NULL) {
+        block->prev->next = block->next;
+    } else {
+        flist = block->next;
+    }
+}
+
+void insert(struct head *block)
+{
+    block->next = flist;
+    block->prev = NULL;
+
+    head *newBlock = new();
+
+    if(flist != NULL) {
+        flist->prev  = newBlock;
+        flist->bfree = newBlock->free;
+        flist->bsize = newBLock->size;
+    }
+    flist = newBlock;
+}
 
