@@ -23,7 +23,7 @@ struct head
 #define ARENA (64*1024)
 
 struct head *arena = NULL;
-srcut head *flist;
+struct head *flist;
 
 struct head *after(struct head *block)
 {
@@ -135,5 +135,13 @@ void *dalloc(size_t request)
 
 int adjust(int size)
 {
-    
+    return size + ALIGN - (size % ALIGN); 
 }
+
+struct head *find(int size)
+{
+    struct head *h = flist;
+    while(h->size < size)
+    {
+
+} 
