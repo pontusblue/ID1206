@@ -1,5 +1,7 @@
-#include <sys/mman.h>
-#include <stdint.h>
+#include "dlmall.h"
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
 
 #define TRUE 1
 #define FALSE 0
@@ -32,6 +34,7 @@ struct head *after(struct head *block)
 
 struct head *before(struct head *block)
 {
+    printf("DANGER");
     return (struct head*)((char*) block - block->size - HEAD);
 }
 
@@ -40,14 +43,15 @@ struct head *split(struct head *block, int size)
     int rsize = block->size - size - HEAD;
     block->size = rsize;
 
-    struct head *splt = malloc(size + HEAD);
+    struct head *splt = after(block); 
     splt->bsize = block->size;
     splt->bfree = block->free;
-    splt->size = size + HEAD;
+    splt->size = size;
     splt->free = TRUE;
 
     struct head *aft = after(splt);
     aft->bsize = splt->size;
+    aft->bfree = splt->free;
 
     return splt;
 } 
@@ -69,7 +73,7 @@ struct head *new()
     }
 
     // make room for head and dummy
-    uint size = ARENA - 2*HEAD;
+    int size = ARENA - 2*HEAD;
     
     new->bfree = FALSE;
     new->bsize = 0;
@@ -108,40 +112,91 @@ void insert(struct head *block)
     block->next = flist;
     block->prev = NULL;
 
-    head *newBlock = new();
-
     if(flist != NULL) {
-        flist->prev  = newBlock;
-        flist->bfree = newBlock->free;
-        flist->bsize = newBLock->size;
+        flist->prev = block;
     }
-    flist = newBlock;
-}
 
-void *dalloc(size_t request)
-{
-    if(request <= 0) {
-        return ...;
-    }
-    int size = adjust(request);
-    struct head *taken = find(size);
-    if(taken == NULL)
-    {
-        return NULL;
-    } else {
-        return ...;
-    }
+    flist = block;
 }
 
 int adjust(int size)
 {
+    if(size % ALIGN == 0) return size;
     return size + ALIGN - (size % ALIGN); 
 }
 
 struct head *find(int size)
 {
     struct head *h = flist;
-    while(h->size < size)
+    while(h != 0)
     {
-
+        if(h->size < size)
+        {
+            h = h->next;
+            continue;
+        }
+        else return h;
+    }
+    return NULL;
 } 
+
+void *dalloc(size_t request)
+{
+    if(request <= 0) {
+        return NULL;
+    }
+    int size = adjust(request);
+    struct head *taken = find(size);
+    if(taken == NULL) {
+        sanity();
+        return NULL;
+    } else {
+        detach(taken);
+        taken->free = FALSE;
+        if(taken->size > size) {
+            struct head *rem = split(taken, size);
+            insert(rem);
+        } else {
+            struct head *aft = after(taken);
+            aft->bfree = FALSE;
+        }
+        sanity();
+        return (void*) ((char*)taken + HEAD); // Return the memory address of the block
+    }
+}
+
+void dfree(void *memory)
+{
+    if(memory != NULL) {
+        struct head *block = (struct head*) ((char*)memory - HEAD);
+
+        struct head *aft = after(block);
+        block->free = TRUE;
+        aft->bfree = TRUE;
+    }
+    sanity();
+}
+
+void init()
+{
+    struct head *a = new();
+    if(a != NULL) insert(a);
+    sanity();
+}
+
+void insanity(char* file, int line)
+{
+    if(arena != NULL) {
+        printf("\nSanity check! File: %s:%d\n", file, line);
+        struct head *h = arena;
+        while(h < (struct head*) ((char*)arena + ARENA))
+        {
+            printf("-- %p:\tbfree(%d), bsize(%d), dataptr(%p)\n",
+                h, h->bfree, h->bsize, (void*) ((char*)h + HEAD));
+            printf("\t\t\t_free(%d), _size(%d), mod(%d), next(%p), prev(%p)\n",
+                h->free, h->size, h->size%ALIGN, h->next, h->prev);
+
+            h = after(h);
+        }
+    } else printf("Arena not created! File: %s:%d\n", file, line);
+}
