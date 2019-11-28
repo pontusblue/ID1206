@@ -121,7 +121,7 @@ void insert(struct head *block)
 void *dalloc(size_t request)
 {
     if(request <= 0) {
-        return ...;
+        return NULL;
     }
     int size = adjust(request);
     struct head *taken = find(size);
@@ -129,7 +129,7 @@ void *dalloc(size_t request)
     {
         return NULL;
     } else {
-        return ...;
+        return (void*) (taken + HEAD); // Return the memory address of the block
     }
 }
 
@@ -141,7 +141,15 @@ int adjust(int size)
 struct head *find(int size)
 {
     struct head *h = flist;
-    while(h->size < size)
+    while(h->size != 0)
     {
-
+        if(!h->free || h->size < size)
+        {
+            h = after(h);
+            continue;
+        }
+        else return h;
+    }
+    return NULL;
 } 
+
