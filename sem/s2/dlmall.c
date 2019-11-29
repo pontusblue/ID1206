@@ -34,19 +34,18 @@ struct head *after(struct head *block)
 
 struct head *before(struct head *block)
 {
-    printf("DANGER");
-    return (struct head*)((char*) block - block->size - HEAD);
+    return (struct head*)((char*) block - block->bsize - HEAD);
 }
 
 struct head *split(struct head *block, int size)
 {
     int rsize = block->size - size - HEAD;
-    block->size = rsize;
+    block->size = size;
 
     struct head *splt = after(block); 
     splt->bsize = block->size;
     splt->bfree = block->free;
-    splt->size = size;
+    splt->size = rsize;
     splt->free = TRUE;
 
     struct head *aft = after(splt);
@@ -169,10 +168,11 @@ void dfree(void *memory)
 {
     if(memory != NULL) {
         struct head *block = (struct head*) ((char*)memory - HEAD);
-
         struct head *aft = after(block);
         block->free = TRUE;
         aft->bfree = TRUE;
+
+        insert(block);
     }
     sanity();
 }
@@ -184,10 +184,10 @@ void init()
     sanity();
 }
 
-void insanity(char* file, int line)
+void insanity(char* file, int line, char* func)
 {
     if(arena != NULL) {
-        printf("\nSanity check! File: %s:%d\n", file, line);
+        printf("\nSanity check! File: %s:%d <-- %s\n", file, line, func);
         struct head *h = arena;
         while(h < (struct head*) ((char*)arena + ARENA))
         {
@@ -198,5 +198,5 @@ void insanity(char* file, int line)
 
             h = after(h);
         }
-    } else printf("Arena not created! File: %s:%d\n", file, line);
+    } else printf("Arena not created! File: %s:%d <-- %s\n", file, line, func);
 }
