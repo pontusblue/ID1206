@@ -6,9 +6,9 @@
 #define ARG_COUNT 3
 #define ARENA (64*1024)
 
-#define GET_COUNT(size) (allocationCounts[size - minSize])
-#define ADD_COUNT(size) (allocationCounts[size - minSize]++)
-#define SUB_COUNT(size) (allocationCounts[size - minSize]--)
+#define GET_COUNT(size) (allocationCounts[size])
+#define ADD_COUNT(size) (allocationCounts[size]++)
+#define SUB_COUNT(size) (allocationCounts[size]--)
 #define RANDOM(min, max) (rand() % (max - min + 1) + min)
 
 int testCount;
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
         allocCount = atoi(argv[4]);
     }
 
-    allocationCounts = malloc(sizeof(int) * (maxSize - minSize));
+    allocationCounts = malloc(sizeof(int) * ARENA);
 
     clock_t start, end;
     double time;
@@ -141,6 +141,27 @@ int main(int argc, char *argv[])
 
     end = clock();
     time = ((double) (end - start)) / CLOCKS_PER_SEC;
+
+    struct head *ar = arena;
+    switch (testId)
+    {
+    case 1:
+        while(ar < (struct head*) ((char*)arena + ARENA))
+        {
+            ADD_COUNT(ar->size);
+            ar = after(ar);
+        }
+        printf("Total time: %f ms", (time * 1000));
+        for(int i = 0; i < ARENA; i++)
+        {
+            if(GET_COUNT(i) != 0) {
+                printf("%d %d\n", i, GET_COUNT(i));
+            }
+        }
+        break;
+    default:
+        break;
+    }
 
     free(allocationCounts);
     freeAll();

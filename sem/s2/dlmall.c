@@ -6,16 +6,6 @@
 #define TRUE 1
 #define FALSE 0
 
-struct head 
-{
-    uint16_t bfree;
-    uint16_t bsize;
-    uint16_t free;
-    uint16_t size;
-    struct head *next;
-    struct head *prev;    
-};
-
 #define HEAD (sizeof(struct head))
 #define MIN(size) (((size)>(8))?(size):(8))
 #define LIMIT(size) (MIN(0) + HEAD + size)
