@@ -152,7 +152,7 @@ void *dalloc(size_t request)
     } else {
         detach(taken);
         taken->free = FALSE;
-        if(taken->size > size) {
+        if(taken->size > size + HEAD) {
             struct head *rem = split(taken, size);
             insert(rem);
         } else {
