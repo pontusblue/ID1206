@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define ARG_COUNT 2
+#define ARG_COUNT 3
 #define ARENA (64*1024)
 
 #define GET_COUNT(size) (allocationCounts[size - minSize])
@@ -33,12 +33,19 @@ unsigned int ll = 0;
 
 void push(int *e)
 {
+    struct node *nn = (struct node*) calloc(1, sizeof(struct node));
+    if(nn == NULL) {
+        printf("CALLOC FAILED!");
+        return;
+    }
     ll++;
-    struct node *nn = malloc(sizeof(struct node));
     nn->data = e;
     nn->next = lt;
-    lt->prev = nn;
+    if(lt != NULL) {
+        lt->prev = nn;
+    }
     lt = nn;
+    if(lh == NULL) lh = lt;
 }
 
 int* peek()
@@ -75,11 +82,14 @@ void freeAll()
 
 int main(int argc, char *argv[])
 {
+    argc--;
     if(argc < ARG_COUNT) {
         printf("Usage: ./bench <test id> <min malloc size> <max malloc size>\
-         [max number of allocations] [number of allocations]");
+         [max number of allocations] [number of allocations]\n");
         return -1;
     }
+    argv = &argv[1];
+    init();
 
     testId  = atoi(argv[0]);  
     minSize = atoi(argv[1]);
@@ -91,7 +101,7 @@ int main(int argc, char *argv[])
         maxAllocCount = atoi(argv[3]);
     }
 
-    if(argc < ARG_COUNT + 1) {
+    if(argc < ARG_COUNT + 2) {
         allocCount = ARENA/maxSize * 10;
     } else {
         allocCount = atoi(argv[4]);
@@ -113,15 +123,20 @@ int main(int argc, char *argv[])
                 if(rand()%2 && count() > 0) {
                     dfree(pop());
                 } else {
-                    if(count() >= maxAllocCount) {
+                    if(count() >= maxAllocCount && count() > 0) {
                         dfree(pop());
                     }
-                    push(dalloc(RANDOM(minSize, maxSize)));
+                    int *d = dalloc(RANDOM(minSize, maxSize));
+                    if(d != NULL) {
+                        push(d);
+                    } else if(count() > 0) {
+                        dfree(pop());
+                    }
                 }
             }
             break;
         default:
-            printf("No test with id %d", testId);
+            printf("No test with id %d\n", testId);
     }
 
     end = clock();
