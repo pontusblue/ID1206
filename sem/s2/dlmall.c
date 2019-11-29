@@ -16,7 +16,16 @@ struct head
     struct head *prev;    
 };
 
+struct taken
+{
+    uint16_t bfree;
+    uint16_t bsize;
+    uint16_t free;
+    uint16_t size;
+};
+
 #define HEAD (sizeof(struct head))
+#define TAKEN (sizeof(struct head))
 #define MIN(size) (((size)>(8))?(size):(8))
 #define LIMIT(size) (MIN(0) + HEAD + size)
 #define MAGIC(memory) ((struct head*)memory - 1)
@@ -29,12 +38,12 @@ struct head *flist;
 
 struct head *after(struct head *block)
 {
-    return (struct head*)((char*) block + block->size + HEAD);
+    return (struct head*)((char*) block + block->size + TAKEN);
 }
 
 struct head *before(struct head *block)
 {
-    return (struct head*)((char*) block - block->bsize - HEAD);
+    return (struct head*)((char*) block - block->bsize - TAKEN);
 }
 
 struct head *split(struct head *block, int size)
@@ -120,6 +129,7 @@ void insert(struct head *block)
 
 int adjust(int size)
 {
+    if(size < HEAD - TAKEN) return HEAD - TAKEN;
     if(size % ALIGN == 0) return size;
     return size + ALIGN - (size % ALIGN); 
 }
