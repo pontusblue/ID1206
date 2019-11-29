@@ -164,6 +164,31 @@ void *dalloc(size_t request)
     }
 }
 
+struct head *merge(struct head *block)
+{
+    struct head *aft = after(block);
+    struct head *bfr = before(block);
+
+    if(block->bfree) {
+        detach(bfr);
+        bfr->size = bfr->size + block->size + HEAD;
+        bfr->free = TRUE;
+        aft->bsize = bfr->size;
+
+        block = bfr;
+    }
+
+    if(aft->free) {
+        detach(aft);
+        block->size = block->size + aft->size + HEAD;
+        aft = after(aft);
+        aft->bsize = block->size;
+        aft->bfree = TRUE;
+    }
+
+    return block;
+}
+
 void dfree(void *memory)
 {
     if(memory != NULL) {
@@ -171,6 +196,8 @@ void dfree(void *memory)
         struct head *aft = after(block);
         block->free = TRUE;
         aft->bfree = TRUE;
+
+        block = merge(block);
 
         insert(block);
     }
