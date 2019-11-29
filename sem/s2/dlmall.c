@@ -6,16 +6,6 @@
 #define TRUE 1
 #define FALSE 0
 
-struct head 
-{
-    uint16_t bfree;
-    uint16_t bsize;
-    uint16_t free;
-    uint16_t size;
-    struct head *next;
-    struct head *prev;    
-};
-
 struct taken
 {
     uint16_t bfree;
@@ -162,7 +152,7 @@ void *dalloc(size_t request)
     } else {
         detach(taken);
         taken->free = FALSE;
-        if(taken->size > size) {
+        if(taken->size > size + HEAD) {
             struct head *rem = split(taken, size);
             insert(rem);
         } else {
