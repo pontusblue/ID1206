@@ -6,16 +6,6 @@
 #define TRUE 1
 #define FALSE 0
 
-struct head 
-{
-    uint16_t bfree;
-    uint16_t bsize;
-    uint16_t free;
-    uint16_t size;
-    struct head *next;
-    struct head *prev;    
-};
-
 #define HEAD (sizeof(struct head))
 #define MIN(size) (((size)>(8))?(size):(8))
 #define LIMIT(size) (MIN(0) + HEAD + size)
@@ -213,8 +203,18 @@ void init()
 
 void insanity(char* file, int line, char* func)
 {
+    printf("================================================\n");
+    printf("\nSanity check! File: %s:%d <-- %s\n", file, line, func);
+
+    printArena(file, line, func);
+
+    printf("================================================\n");
+}
+
+void printArena(char* file, int line, char* func)
+{
+    printf("-------------------------------------------------\n");
     if(arena != NULL) {
-        printf("\nSanity check! File: %s:%d <-- %s\n", file, line, func);
         struct head *h = arena;
         while(h < (struct head*) ((char*)arena + ARENA))
         {
@@ -226,4 +226,23 @@ void insanity(char* file, int line, char* func)
             h = after(h);
         }
     } else printf("Arena not created! File: %s:%d <-- %s\n", file, line, func);
+    printf("-------------------------------------------------\n");
+}
+
+void printFreeList(char* file, int line, char* func)
+{
+    printf("-------------------------------------------------\n");
+    if(flist != NULL) {
+        struct head *h = flist;
+        while(h != NULL)
+        {
+            printf("-- %p:\tbfree(%d), bsize(%d), dataptr(%p)\n",
+                h, h->bfree, h->bsize, (void*) ((char*)h + HEAD));
+            printf("\t\t\t_free(%d), _size(%d), mod(%d), next(%p), prev(%p)\n",
+                h->free, h->size, h->size%ALIGN, h->next, h->prev);
+
+            h = h->next;
+        }
+    } else printf("Free list empty! File: %s:%d <-- %s\n", file, line, func);
+    printf("-------------------------------------------------\n");
 }
