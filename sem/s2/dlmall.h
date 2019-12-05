@@ -24,3 +24,4 @@ void init();
 struct head* after(struct head*);
 
 struct head *arena;
+int flistSize;

@@ -19,6 +19,7 @@ int allocCount;
 int testId;
 
 int *allocationCounts;
+int *flistSizes;
 
 struct node
 {
@@ -108,6 +109,7 @@ int main(int argc, char *argv[])
     }
 
     allocationCounts = malloc(sizeof(int) * ARENA);
+    flistSizes = malloc(sizeof(int) * allocCount);
 
     clock_t start, end;
     double time;
@@ -134,6 +136,22 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+        case 2:
+            for(int i = 0; i < allocCount; i++)
+            {
+                if(count() >= maxAllocCount) {
+                    dfree(pop());
+                }
+                int *d = dalloc(RANDOM(minSize, maxSize));
+                if(d != NULL) {
+                    push(d);
+                } else if(count() > 0) {
+                    dfree(pop());
+                } else {
+                    printf("A PROBLEM HAS OCURRED!");
+                }
+                flistSizes[i] = flistSize;
+            }
             break;
         default:
             printf("No test with id %d\n", testId);
@@ -143,15 +161,16 @@ int main(int argc, char *argv[])
     time = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     struct head *ar = arena;
+    printf("# total time: %f ms.\n", (time * 1000));
+    
     switch (testId)
     {
-    case 1:
+    case 1: // x = element block size, y = number of blocks
         while(ar < (struct head*) ((char*)arena + ARENA))
         {
             ADD_COUNT(ar->size);
             ar = after(ar);
         }
-        printf("Total time: %f ms", (time * 1000));
         for(int i = 0; i < ARENA; i++)
         {
             if(GET_COUNT(i) != 0) {
@@ -159,10 +178,19 @@ int main(int argc, char *argv[])
             }
         }
         break;
+
+    case 2: // x = iterations, y = flist size
+        for(int i = 0; i < allocCount; i++)
+        {
+            printf("%d %d\n", i, flistSizes[i]);
+        }
+        break;
+
     default:
         break;
     }
 
     free(allocationCounts);
+    free(flistSizes);
     freeAll();
 }

@@ -6,6 +6,12 @@
 #define TRUE 1
 #define FALSE 0
 
+#define VERSION_CURRENT 3
+
+#define VERSION_CHEAT 1
+#define VERSION_MERGE 2
+#define VERSION_OPTIMIZED 3
+
 #define HEAD (sizeof(struct head))
 #define MIN(size) (((size)>(8))?(size):(8))
 #define LIMIT(size) (MIN(0) + HEAD + size)
@@ -16,6 +22,7 @@
 
 struct head *arena = NULL;
 struct head *flist;
+int flistSize = 0;
 
 struct head *after(struct head *block)
 {
@@ -39,7 +46,7 @@ struct head *split(struct head *block, int size)
     splt->free = TRUE;
 
     struct head *aft = after(splt);
-    aft->bsize = splt->size;
+    aft->bsize = splt->size; // Segmentation fault: rsize = -16
     aft->bfree = splt->free;
 
     return splt;
@@ -85,6 +92,7 @@ struct head *new()
 
 void detach(struct head *block)
 {
+    flistSize--;
     if(block->next != NULL) {
         block->next->prev = block->prev;
     }
@@ -98,6 +106,7 @@ void detach(struct head *block)
 
 void insert(struct head *block)
 {
+    flistSize++;
     block->next = flist;
     block->prev = NULL;
 
@@ -142,7 +151,7 @@ void *dalloc(size_t request)
     } else {
         detach(taken);
         taken->free = FALSE;
-        if(taken->size > size) {
+        if(taken->size > size + HEAD) { // <<<<<<<<<<<<<<<<< replace HEAD
             struct head *rem = split(taken, size);
             insert(rem);
         } else {
@@ -187,7 +196,9 @@ void dfree(void *memory)
         block->free = TRUE;
         aft->bfree = TRUE;
 
+#if VERSION_CURRENT > VERSION_CHEAT
         block = merge(block);
+#endif
 
         insert(block);
     }
@@ -196,6 +207,7 @@ void dfree(void *memory)
 
 void init()
 {
+    printf("# VERSION %d\n", VERSION_CURRENT);
     struct head *a = new();
     if(a != NULL) insert(a);
     sanity();
