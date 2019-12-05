@@ -13,6 +13,13 @@
 #define VERSION_OPTIMIZED 3
 
 #define HEAD (sizeof(struct head))
+
+#if VERSION_CURRENT < VERSION_OPTIMIZED
+#define TAKEN HEAD
+#else
+#define TAKEN (sizeof(struct taken))
+#endif
+
 #define MIN(size) (((size)>(8))?(size):(8))
 #define LIMIT(size) (MIN(0) + HEAD + size)
 #define MAGIC(memory) ((struct head*)memory - 1)

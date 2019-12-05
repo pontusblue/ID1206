@@ -17,6 +17,14 @@ struct head
     struct head *prev;    
 };
 
+struct taken 
+{
+    uint16_t bfree;
+    uint16_t bsize;
+    uint16_t free;
+    uint16_t size;
+};
+
 void *dalloc(size_t request);
 void dfree(void *memory);
 void insanity(char* file, int line, char* func);
