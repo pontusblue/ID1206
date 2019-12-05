@@ -136,6 +136,7 @@ int main(int argc, char *argv[])
                     }
                 }
             }
+            break;
         case 2:
             for(int i = 0; i < allocCount; i++)
             {
@@ -148,7 +149,7 @@ int main(int argc, char *argv[])
                 } else if(count() > 0) {
                     dfree(pop());
                 } else {
-                    printf("A PROBLEM HAS OCURRED!");
+                    printf("A PROBLEM HAS OCURRED!\n");
                 }
                 flistSizes[i] = flistSize;
             }

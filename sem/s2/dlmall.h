@@ -1,7 +1,9 @@
 #include <stdint.h>
 #include <sys/mman.h>
 
-#ifdef SANITY_DEBUG
+#define SANITY_DEBUG_ENABLED 0
+
+#if SANITY_DEBUG_ENABLED
 #define sanity() (insanity(__FILE__, __LINE__, __FUNCTION__));
 #else
 #define sanity() (1)

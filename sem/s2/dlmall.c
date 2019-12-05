@@ -15,9 +15,11 @@
 #define HEAD (sizeof(struct head))
 
 #if VERSION_CURRENT < VERSION_OPTIMIZED
-#define TAKEN HEAD
+#define TAKEN (HEAD)
+#define MARGIN 0
 #else
 #define TAKEN (sizeof(struct taken))
+#define MARGIN (HEAD - TAKEN)
 #endif
 
 #define MIN(size) (((size)>(8))?(size):(8))
@@ -135,7 +137,11 @@ struct head *find(int size)
     struct head *h = flist;
     while(h != 0)
     {
+#if VERSION_CURRENT == VERSION_OPTIMIZED
+        if(h->size + MARGIN < size)
+#else
         if(h->size < size)
+#endif
         {
             h = h->next;
             continue;
@@ -158,7 +164,13 @@ void *dalloc(size_t request)
     } else {
         detach(taken);
         taken->free = FALSE;
-        if(taken->size > size + HEAD) { // <<<<<<<<<<<<<<<<< replace HEAD
+
+#if VERSION_CURRENT == VERSION_OPTIMIZED
+        if(taken->size - HEAD > size + TAKEN)
+#else
+        if(taken->size - HEAD > size)
+#endif
+        {
             struct head *rem = split(taken, size);
             insert(rem);
         } else {
@@ -166,7 +178,12 @@ void *dalloc(size_t request)
             aft->bfree = FALSE;
         }
         sanity();
+
+#if VERSION_CURRENT == VERSION_OPTIMIZED
+        return (void*) ((char*)taken + TAKEN);
+#else
         return (void*) ((char*)taken + HEAD); // Return the memory address of the block
+#endif
     }
 }
 
@@ -197,8 +214,13 @@ struct head *merge(struct head *block)
 
 void dfree(void *memory)
 {
+    sanity();
     if(memory != NULL) {
+#if VERSION_CURRENT == VERSION_OPTIMIZED
+        struct head *block = (struct head*) ((char*)memory - TAKEN);
+#else
         struct head *block = (struct head*) ((char*)memory - HEAD);
+#endif
         struct head *aft = after(block);
         block->free = TRUE;
         aft->bfree = TRUE;
