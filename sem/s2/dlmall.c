@@ -6,17 +6,24 @@
 #define TRUE 1
 #define FALSE 0
 
-struct head 
-{
-    uint16_t bfree;
-    uint16_t bsize;
-    uint16_t free;
-    uint16_t size;
-    struct head *next;
-    struct head *prev;    
-};
+#ifndef VERSION_CURRENT
+#define VERSION_CURRENT 1
+#endif
+
+#define VERSION_CHEAT 1
+#define VERSION_MERGE 2
+#define VERSION_OPTIMIZED 3
 
 #define HEAD (sizeof(struct head))
+
+#if VERSION_CURRENT < VERSION_OPTIMIZED
+#define TAKEN (HEAD)
+#define MARGIN 0
+#else
+#define TAKEN (sizeof(struct taken))
+#define MARGIN (HEAD - TAKEN)
+#endif
+
 #define MIN(size) (((size)>(8))?(size):(8))
 #define LIMIT(size) (MIN(0) + HEAD + size)
 #define MAGIC(memory) ((struct head*)memory - 1)
@@ -26,6 +33,7 @@ struct head
 
 struct head *arena = NULL;
 struct head *flist;
+int flistSize = 0;
 
 struct head *after(struct head *block)
 {
@@ -49,7 +57,7 @@ struct head *split(struct head *block, int size)
     splt->free = TRUE;
 
     struct head *aft = after(splt);
-    aft->bsize = splt->size;
+    aft->bsize = splt->size; // Segmentation fault: rsize = -16
     aft->bfree = splt->free;
 
     return splt;
@@ -95,6 +103,7 @@ struct head *new()
 
 void detach(struct head *block)
 {
+    flistSize--;
     if(block->next != NULL) {
         block->next->prev = block->prev;
     }
@@ -108,6 +117,7 @@ void detach(struct head *block)
 
 void insert(struct head *block)
 {
+    flistSize++;
     block->next = flist;
     block->prev = NULL;
 
@@ -129,7 +139,11 @@ struct head *find(int size)
     struct head *h = flist;
     while(h != 0)
     {
+#if VERSION_CURRENT == VERSION_OPTIMIZED
+        if(h->size + MARGIN < size)
+#else
         if(h->size < size)
+#endif
         {
             h = h->next;
             continue;
@@ -152,7 +166,13 @@ void *dalloc(size_t request)
     } else {
         detach(taken);
         taken->free = FALSE;
-        if(taken->size > size) {
+
+#if VERSION_CURRENT == VERSION_OPTIMIZED
+        if(taken->size - HEAD > size + TAKEN)
+#else
+        if(taken->size - HEAD > size)
+#endif
+        {
             struct head *rem = split(taken, size);
             insert(rem);
         } else {
@@ -160,17 +180,58 @@ void *dalloc(size_t request)
             aft->bfree = FALSE;
         }
         sanity();
+
+#if VERSION_CURRENT == VERSION_OPTIMIZED
+        return (void*) ((char*)taken + TAKEN);
+#else
         return (void*) ((char*)taken + HEAD); // Return the memory address of the block
+#endif
     }
+}
+
+struct head *merge(struct head *block)
+{
+    struct head *aft = after(block);
+    struct head *bfr = before(block);
+
+    if(block->bfree) {
+        detach(bfr);
+        flistSize++;
+        bfr->size = bfr->size + block->size + HEAD;
+        bfr->free = TRUE;
+        aft->bsize = bfr->size;
+
+        block = bfr;
+    }
+
+    if(aft->free) {
+        detach(aft);
+        flistSize++;
+        block->size = block->size + aft->size + HEAD;
+        aft = after(aft);
+        aft->bsize = block->size;
+        aft->bfree = TRUE;
+    }
+
+    return block;
 }
 
 void dfree(void *memory)
 {
+    sanity();
     if(memory != NULL) {
+#if VERSION_CURRENT == VERSION_OPTIMIZED
+        struct head *block = (struct head*) ((char*)memory - TAKEN);
+#else
         struct head *block = (struct head*) ((char*)memory - HEAD);
+#endif
         struct head *aft = after(block);
         block->free = TRUE;
         aft->bfree = TRUE;
+
+#if VERSION_CURRENT > VERSION_CHEAT
+        block = merge(block);
+#endif
 
         insert(block);
     }
@@ -186,8 +247,18 @@ void init()
 
 void insanity(char* file, int line, char* func)
 {
+    printf("================================================\n");
+    printf("\nSanity check! File: %s:%d <-- %s\n", file, line, func);
+
+    printArena(file, line, func);
+
+    printf("================================================\n");
+}
+
+void printArena(char* file, int line, char* func)
+{
+    printf("-------------------------------------------------\n");
     if(arena != NULL) {
-        printf("\nSanity check! File: %s:%d <-- %s\n", file, line, func);
         struct head *h = arena;
         while(h < (struct head*) ((char*)arena + ARENA))
         {
@@ -199,4 +270,23 @@ void insanity(char* file, int line, char* func)
             h = after(h);
         }
     } else printf("Arena not created! File: %s:%d <-- %s\n", file, line, func);
+    printf("-------------------------------------------------\n");
+}
+
+void printFreeList(char* file, int line, char* func)
+{
+    printf("-------------------------------------------------\n");
+    if(flist != NULL) {
+        struct head *h = flist;
+        while(h != NULL)
+        {
+            printf("-- %p:\tbfree(%d), bsize(%d), dataptr(%p)\n",
+                h, h->bfree, h->bsize, (void*) ((char*)h + HEAD));
+            printf("\t\t\t_free(%d), _size(%d), mod(%d), next(%p), prev(%p)\n",
+                h->free, h->size, h->size%ALIGN, h->next, h->prev);
+
+            h = h->next;
+        }
+    } else printf("Free list empty! File: %s:%d <-- %s\n", file, line, func);
+    printf("-------------------------------------------------\n");
 }
