@@ -138,6 +138,7 @@ int main(int argc, char *argv[])
             }
             break;
         case 2:
+        case 3:
             for(int i = 0; i < allocCount; i++)
             {
                 if(count() >= maxAllocCount) {
@@ -148,10 +149,11 @@ int main(int argc, char *argv[])
                     push(d);
                 } else if(count() > 0) {
                     dfree(pop());
-                } else {
-                    printf("A PROBLEM HAS OCURRED!\n");
                 }
                 flistSizes[i] = flistSize;
+                if(testId == 3) {
+                    printAvgFreeSize(i);
+                }
             }
             break;
         default:
@@ -162,7 +164,6 @@ int main(int argc, char *argv[])
     time = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     struct head *ar = arena;
-    printf("# total time: %f ms.\n", (time * 1000));
     
     switch (testId)
     {
@@ -186,6 +187,9 @@ int main(int argc, char *argv[])
             printf("%d %d\n", i, flistSizes[i]);
         }
         break;
+    
+    case 3:
+        break;
 
     default:
         break;
@@ -194,4 +198,20 @@ int main(int argc, char *argv[])
     free(allocationCounts);
     free(flistSizes);
     freeAll();
+}
+
+void printAvgFreeSize(int i)
+{
+    int total = 0;
+    struct head *h = flist;
+    while(h != NULL)
+    {
+#if VERSION_CURRENT == 3
+        total += h->size + sizeof(head) - sizeof(taken);
+#else
+        total += h->size;
+#endif
+        h = h->next;
+    }
+    printf("%d %f\n", i, ((float) total / flistSize));
 }

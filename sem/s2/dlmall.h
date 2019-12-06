@@ -34,4 +34,5 @@ void init();
 struct head* after(struct head*);
 
 struct head *arena;
+struct head *flist;
 int flistSize;

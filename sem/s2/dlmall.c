@@ -6,7 +6,9 @@
 #define TRUE 1
 #define FALSE 0
 
-#define VERSION_CURRENT 3
+#ifndef VERSION_CURRENT
+#define VERSION_CURRENT 1
+#endif
 
 #define VERSION_CHEAT 1
 #define VERSION_MERGE 2
@@ -194,6 +196,7 @@ struct head *merge(struct head *block)
 
     if(block->bfree) {
         detach(bfr);
+        flistSize++;
         bfr->size = bfr->size + block->size + HEAD;
         bfr->free = TRUE;
         aft->bsize = bfr->size;
@@ -203,6 +206,7 @@ struct head *merge(struct head *block)
 
     if(aft->free) {
         detach(aft);
+        flistSize++;
         block->size = block->size + aft->size + HEAD;
         aft = after(aft);
         aft->bsize = block->size;
@@ -236,7 +240,6 @@ void dfree(void *memory)
 
 void init()
 {
-    printf("# VERSION %d\n", VERSION_CURRENT);
     struct head *a = new();
     if(a != NULL) insert(a);
     sanity();
