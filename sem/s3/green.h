@@ -10,7 +10,7 @@ typedef struct green_t {
     int zombie;
 } green_t;
 
-void green_create(green_t *thread, void *(*fun)(void*), void *arg);
-void green_yield();
-void green_join(green_t *thread, void** val);
+int green_create(green_t *thread, void *(*fun)(void*), void *arg);
+int green_yield();
+int green_join(green_t *thread, void** val);
 

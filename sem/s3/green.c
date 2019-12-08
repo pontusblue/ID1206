@@ -65,13 +65,14 @@ green_t* jpop()
 
 static green_t *running = &main_green;
 
-static init() __attribute__((constructor));
+static void init() __attribute__((constructor));
 
 void init()
 {
     getcontext(&main_cntx);
 }
 
+void green_thread();
 int green_create(green_t *new, void *(*fun)(void*), void *arg)
 {
     ucontext_t *cntx = (ucontext_t *) malloc(sizeof(ucontext_t));
@@ -91,16 +92,17 @@ int green_create(green_t *new, void *(*fun)(void*), void *arg)
     new->retval = NULL;
     new->zombie = FALSE;
 
-    queue(new);
+    // add to ready queue
+    rqueue(new);
 
     return 0;
 }
 
-void  green_thread()
+void green_thread()
 {
     green_t *this = running;
 
-    result = (*this->fun)(this->arg);
+    void *result = (*this->fun)(this->arg);
 
     // place waiting (joining) thread in ready queue
     rqueue(jpop());
