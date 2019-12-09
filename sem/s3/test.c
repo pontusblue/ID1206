@@ -1,15 +1,32 @@
 #include <stdio.h>
 #include "green.h"
 
+int flag = 0;
+green_cond_t cond;
+
+#define LEL
+
 void *test(void *arg)
 {
-    int i = *(int*)arg;
+    int id = *(int*) arg;
     int loop = 4;
     while(loop > 0)
     {
-        printf("thread %d: %d\n", i, loop);
+#ifdef LEL
+        printf("thread %d: %d\n", id, loop);
         loop--;
         green_yield();
+#else
+        if(flag == id)
+        {
+            printf("thread %d: %d\n", id, loop);
+            loop--;
+            flag = (id + 1) % 2;
+            green_cond_signal(&cond);
+        } else {
+            green_cond_wait(&cond);
+        }
+#endif
     }
 }
 
@@ -24,6 +41,6 @@ int main()
     green_join(&g0, NULL);
     green_join(&g1, NULL);
 
-    printf("done\n");
+    printf("donk\n");
     return 0;
 }

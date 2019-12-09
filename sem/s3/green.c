@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <ucontext.h>
 #include <assert.h>
+#include <stdio.h>
 #include "green.h"
 
 #define FALSE 0
@@ -25,12 +26,30 @@ struct green_t *rq_tail;
 struct green_t *jq_head;
 struct green_t *jq_tail;
 
+void gimme()
+{
+    green_t *t;
+    t = rq_head;
+    t = rq_tail;
+    t = jq_head;
+    t = jq_tail;
+    t = &main_green;
+
+
+}
+
 void rqueue(green_t *thread)
 {
+    //if(thread == NULL) return;
     if(rq_tail != NULL)
     {
         rq_tail->next = thread;
     }
+    else
+    {
+        rq_head = thread;
+    }
+    
     rq_tail = thread;
 }
 
@@ -41,14 +60,19 @@ green_t* rpop()
     {
         rq_head = rq_head->next;
     }
-    return rq_head;
+    return tmp;
 }
 
 void jqueue(green_t *thread)
 {
+    //if(thread == NULL) return;
     if(jq_tail != NULL)
     {
         jq_tail->next = thread;
+    }
+    else
+    {
+        jq_head = thread;
     }
     jq_tail = thread;
 }
@@ -100,12 +124,14 @@ int green_create(green_t *new, void *(*fun)(void*), void *arg)
 
 void green_thread()
 {
+    gimme();
     green_t *this = running;
 
     void *result = (*this->fun)(this->arg);
 
     // place waiting (joining) thread in ready queue
-    rqueue(jpop());
+    if(this->join != NULL)
+        rqueue(this->join);
 
     // save result of execution
     this->retval = result;
@@ -115,8 +141,10 @@ void green_thread()
 
     // find the next thread to run
     green_t *next = rpop();
+    //if(next == NULL) return;
 
     running = next;
+    gimme();
     setcontext(next->context);
 }
 
@@ -142,7 +170,8 @@ int green_join(green_t *thread, void **res)
         green_t *susp = running;
 
         // add as joining thread 
-        jqueue(susp);
+        //jqueue(susp);
+        thread->join = susp;
 
         // select the next thread for execution
         green_t *next = rpop();
@@ -150,10 +179,25 @@ int green_join(green_t *thread, void **res)
         running = next;
         swapcontext(susp->context, next->context);
     }
-    // collect result
-    *res = thread->retval;
+    res = thread->retval;
 
     // free context 
+    free(thread->context->uc_stack.ss_sp);
     free(thread->context);
     return 0;
+}
+
+void green_cond_init(green_cond_t *cond)
+{
+
+}
+
+void green_cond_wait(green_cond_t *cond)
+{
+
+}
+
+void green_cond_signal(green_cond_t *cond)
+{
+
 }
