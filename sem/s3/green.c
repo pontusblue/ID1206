@@ -23,24 +23,42 @@ static green_t main_green = {
 struct green_t *rq_head;
 struct green_t *rq_tail;
 
-struct green_t *jq_head;
-struct green_t *jq_tail;
-
-void gimme()
+void queue_thread(green_t **queue, green_t *thread)
 {
-    green_t *t;
-    t = rq_head;
-    t = rq_tail;
-    t = jq_head;
-    t = jq_tail;
-    t = &main_green;
+    if(queue == NULL) return;
+    else if(*queue == NULL)
+    {
+        *queue = thread;
+    }
+    else
+    {
+        green_t *h = *queue;
+        while(h->next != NULL)
+        {
+            h = h->next;
+        }
+        h->next = thread;
+    }
+}
 
-
+green_t *pop_thread(green_t **queue)
+{
+    if(queue == NULL) return NULL;
+    else
+    {
+        green_t *thread = *queue;
+        if(thread != NULL)
+        {
+            *queue = thread->next;
+            thread->next = NULL;
+        }
+        return thread;
+    }
 }
 
 void rqueue(green_t *thread)
 {
-    //if(thread == NULL) return;
+    if(thread == NULL) return;
     if(rq_tail != NULL)
     {
         rq_tail->next = thread;
@@ -59,32 +77,11 @@ green_t* rpop()
     if(rq_head != NULL)
     {
         rq_head = rq_head->next;
+        if(rq_head == NULL)
+            rq_tail = NULL;
+
     }
     return tmp;
-}
-
-void jqueue(green_t *thread)
-{
-    //if(thread == NULL) return;
-    if(jq_tail != NULL)
-    {
-        jq_tail->next = thread;
-    }
-    else
-    {
-        jq_head = thread;
-    }
-    jq_tail = thread;
-}
-
-green_t* jpop()
-{
-    green_t *tmp = jq_head;
-    if(jq_head != NULL)
-    {
-        jq_head = jq_head->next;
-    }
-    return jq_head;
 }
 
 static green_t *running = &main_green;
@@ -124,7 +121,6 @@ int green_create(green_t *new, void *(*fun)(void*), void *arg)
 
 void green_thread()
 {
-    gimme();
     green_t *this = running;
 
     void *result = (*this->fun)(this->arg);
@@ -144,7 +140,6 @@ void green_thread()
     //if(next == NULL) return;
 
     running = next;
-    gimme();
     setcontext(next->context);
 }
 
@@ -169,8 +164,7 @@ int green_join(green_t *thread, void **res)
     {
         green_t *susp = running;
 
-        // add as joining thread 
-        //jqueue(susp);
+        // add as joining thread
         thread->join = susp;
 
         // select the next thread for execution
@@ -189,15 +183,23 @@ int green_join(green_t *thread, void **res)
 
 void green_cond_init(green_cond_t *cond)
 {
-
+    cond->queue = NULL;
 }
 
 void green_cond_wait(green_cond_t *cond)
 {
+    green_t *susp = running;
 
+    queue_thread(&(cond->queue), susp);
+
+    // select the next thread for execution
+    green_t *next = rpop();
+
+    running = next;
+    swapcontext(susp->context, next->context);
 }
 
 void green_cond_signal(green_cond_t *cond)
 {
-
+    rqueue(pop_thread(&(cond->queue)));
 }
