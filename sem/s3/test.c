@@ -7,7 +7,7 @@ green_cond_t cond;
 void *test(void *arg)
 {
     int id = *(int*) arg;
-    int loop = 4;
+    int loop = 1000000;
     while(loop > 0)
     {
         if(flag == id)
