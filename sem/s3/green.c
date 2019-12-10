@@ -14,13 +14,14 @@
 
 static ucontext_t main_cntx = {0};
 static green_t main_green = {
-    &main_cntx,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    FALSE
+        -1,
+        &main_cntx,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        FALSE
 };
 
 static sigset_t block;
@@ -28,71 +29,15 @@ static sigset_t block;
 struct green_t *rq_head;
 struct green_t *rq_tail;
 
-void queue_thread(green_t **queue, green_t *thread)
-{
-    if(queue == NULL) return;
-    else if(*queue == NULL)
-    {
-        *queue = thread;
-    }
-    else
-    {
-        green_t *h = *queue;
-        while(h->next != NULL)
-        {
-            h = h->next;
-        }
-        h->next = thread;
-    }
-}
-
-green_t *pop_thread(green_t **queue)
-{
-    if(queue == NULL) return NULL;
-    else
-    {
-        green_t *thread = *queue;
-        if(thread != NULL)
-        {
-            *queue = thread->next;
-            thread->next = NULL;
-        }
-        return thread;
-    }
-}
-
-void rqueue(green_t *thread)
-{
-    if(thread == NULL) return;
-    if(rq_tail != NULL)
-    {
-        rq_tail->next = thread;
-    }
-    else
-    {
-        rq_head = thread;
-    }
-    
-    rq_tail = thread;
-}
-
-green_t* rpop()
-{
-    green_t *tmp = rq_head;
-    if(rq_head != NULL)
-    {
-        rq_head = rq_head->next;
-        if(rq_head == NULL)
-            rq_tail = NULL;
-
-    }
-    return tmp;
-}
-
 static green_t *running = &main_green;
 
 void green_thread();
 void timer_handler(int);
+
+void queue_thread(green_t **, green_t *);
+green_t *pop_thread(green_t **);
+void rqueue(green_t *);
+green_t* rpop();
 
 static void init() __attribute__((constructor));
 
@@ -134,6 +79,7 @@ int green_create(green_t *new, void *(*fun)(void*), void *arg)
     cntx->uc_stack.ss_size = STACK_SIZE;
     makecontext(cntx, green_thread, 0);
 
+    new->id = *(int*)arg;
     new->context = cntx;
     new->fun = fun;
     new->arg = arg;
@@ -171,7 +117,6 @@ void green_thread()
     //if(next == NULL) return;
 
     running = next;
-    assert(rq_head != rq_head->next);
     setcontext(next->context);
     sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
@@ -201,13 +146,16 @@ int green_join(green_t *thread, void **res)
         green_t *susp = running;
 
         // add as joining thread
-        thread->join = susp;
+        //thread->join = susp;
+        queue_thread(&thread->join, susp);
 
         // select the next thread for execution
         green_t *next = rpop();
 
         running = next;
-        swapcontext(susp->context, next->context);
+        if(next != NULL)
+            swapcontext(susp->context, next->context);
+        else printf("????????\n");
     }
     res = thread->retval;
 
@@ -238,6 +186,64 @@ void green_cond_wait(green_cond_t *cond)
 
 void green_cond_signal(green_cond_t *cond)
 {
-    assert(rq_head != running);
     rqueue(pop_thread(&(cond->queue)));
+}
+
+
+void queue_thread(green_t **queue, green_t *thread)
+{
+    if(queue == NULL) return;
+    else if(*queue == NULL)
+    {
+        *queue = thread;
+    }
+    else
+    {
+        green_t *h = *queue;
+        assert(thread->id != -1);
+        while(h->next != NULL)
+        {
+            h = h->next;
+        }
+        h->next = thread;
+    }
+}
+
+green_t *pop_thread(green_t **queue)
+{
+    green_t *thread = *queue;
+    if(thread != NULL)
+    {
+        *queue = thread->next;
+        thread->next = NULL;
+    }
+    return thread;
+}
+
+void rqueue(green_t *thread)
+{
+    if(thread == NULL) return;
+    if(rq_tail != NULL)
+    {
+        rq_tail->next = thread;
+    }
+    else
+    {
+        rq_head = thread;
+    }
+
+    rq_tail = thread;
+}
+
+green_t* rpop()
+{
+    green_t *tmp = rq_head;
+    if(rq_head != NULL)
+    {
+        rq_head = rq_head->next;
+        if(rq_head == NULL)
+            rq_tail = NULL;
+
+    }
+    return tmp;
 }

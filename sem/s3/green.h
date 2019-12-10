@@ -1,6 +1,7 @@
 #include <ucontext.h>
 
 typedef struct green_t {
+    int id;
     ucontext_t *context;
     void *(*fun)(void*);
     void *arg;
