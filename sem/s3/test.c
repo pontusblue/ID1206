@@ -4,6 +4,7 @@
 
 int flag = 0;
 green_cond_t cond;
+green_mutex_t mutex;
 
 #define LOOP_COUNT 10000
 #define THREADS 2
@@ -14,21 +15,24 @@ void *test(void *arg)
     int loop = LOOP_COUNT;
     while(loop > 0)
     {
-        if(flag == id)
+        green_mutex_lock(&mutex);
+        while(flag != id)
         {
-            printf("thread %d: %d\n", id, loop);
-            loop--;
-            flag = (id + 1) % THREADS;
-            green_cond_signal(&cond);
-        } else {
+            green_mutex_unlock(&mutex);
             green_cond_wait(&cond);
+            //maybe add new mutex here??
         }
+        flag = (id + 1) % 2;
+        green_cond_signal(&cond);
+        green_mutex_unlock(&mutex);
+        loop--;
     }
 }
 
 int main()
 {
     green_cond_init(&cond);
+    green_mutex_init(&mutex);
 
     green_t *gthreads = malloc(sizeof(struct green_t) * THREADS);
     int *args = malloc(sizeof(int) * THREADS);

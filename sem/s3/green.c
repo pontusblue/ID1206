@@ -178,19 +178,37 @@ void green_cond_init(green_cond_t *cond)
     cond->queue = NULL;
 }
 
-void green_cond_wait(green_cond_t *cond)
+void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
 {
+    sigprocmask(SIG_BLOCK, &block, NULL);
     green_t *susp = running;
 
-    sigprocmask(SIG_BLOCK, &block, NULL);
     queue_thread(&(cond->queue), susp);
+
+    if(mutex != NULL && mutex->taken)
+    {
+        mutex->taken = FALSE;
+        rqueue(pop_thread(&mutex->queue));
+    }
 
     // select the next thread for execution
     green_t *next = rpop();
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
 
     running = next;
     swapcontext(susp->context, next->context);
+
+    if(mutex != NULL)
+    {
+        if(mutex->taken)
+        {
+
+        }
+        else
+        {
+            mutex->taken = TRUE;
+        }
+    }
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
 
 void green_cond_signal(green_cond_t *cond)
