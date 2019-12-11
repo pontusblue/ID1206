@@ -6,7 +6,7 @@ int flag = 0;
 green_cond_t cond;
 green_mutex_t mutex;
 
-#define LOOP_COUNT 10000
+#define LOOP_COUNT 100
 #define THREADS 2
 
 void *test(void *arg)
@@ -19,10 +19,10 @@ void *test(void *arg)
         while(flag != id)
         {
             green_mutex_unlock(&mutex);
-            green_cond_wait(&cond);
+            green_cond_wait(&cond, &mutex);
             //maybe add new mutex here??
         }
-        flag = (id + 1) % 2;
+        flag = (id + 1) % THREADS;
         green_cond_signal(&cond);
         green_mutex_unlock(&mutex);
         loop--;

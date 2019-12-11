@@ -185,7 +185,7 @@ void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
 
     queue_thread(&(cond->queue), susp);
 
-    if(mutex != NULL && mutex->taken)
+    if(mutex != NULL)
     {
         mutex->taken = FALSE;
         rqueue(pop_thread(&mutex->queue));
@@ -199,14 +199,13 @@ void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
 
     if(mutex != NULL)
     {
-        if(mutex->taken)
+        while(mutex->taken)
         {
+            queue_thread(&mutex->queue, susp);
+            rqueue(rpop());
+        }
+        mutex->taken = TRUE;
 
-        }
-        else
-        {
-            mutex->taken = TRUE;
-        }
     }
     sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
