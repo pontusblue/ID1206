@@ -32,6 +32,7 @@ int main()
 
     green_t *gthreads = malloc(sizeof(struct green_t) * THREADS);
     int *args = malloc(sizeof(int) * THREADS);
+    int **res = malloc(sizeof(int*) * THREADS);
 
     for(int i = 0; i < THREADS; i++)
         args[i] = i;
@@ -40,7 +41,7 @@ int main()
         green_create(&gthreads[i], test, &args[i]);
 
     for(int i = 0; i < THREADS; i++)
-        green_join(&gthreads[i], NULL);
+        green_join(&gthreads[i], (void **) &res[i]);
 
     printf("donk\n");
     return 0;

@@ -69,7 +69,6 @@ void timer_handler(int sig)
 
 int green_create(green_t *new, void *(*fun)(void*), void *arg)
 {
-    sigprocmask(SIG_BLOCK, &block, NULL);
     ucontext_t *cntx = (ucontext_t *) malloc(sizeof(ucontext_t));
     getcontext(cntx);
 
@@ -88,6 +87,7 @@ int green_create(green_t *new, void *(*fun)(void*), void *arg)
     new->retval = NULL;
     new->zombie = FALSE;
 
+    sigprocmask(SIG_BLOCK, &block, NULL);
     // add to ready queue
     rqueue(new);
 
@@ -97,14 +97,17 @@ int green_create(green_t *new, void *(*fun)(void*), void *arg)
 
 void green_thread()
 {
-    sigprocmask(SIG_BLOCK, &block, NULL);
     green_t *this = running;
 
     void *result = (*this->fun)(this->arg);
 
+    sigprocmask(SIG_BLOCK, &block, NULL);
     // place waiting (joining) thread in ready queue
     if(this->join != NULL)
+    {
         rqueue(this->join);
+        this->join = NULL;
+    }
 
     // save result of execution
     this->retval = result;
@@ -146,8 +149,8 @@ int green_join(green_t *thread, void **res)
         green_t *susp = running;
 
         // add as joining thread
-        //thread->join = susp;
-        queue_thread(&thread->join, susp);
+        thread->join = susp;
+        //jqueue_thread(&thread->join, susp);
 
         // select the next thread for execution
         green_t *next = rpop();
@@ -157,12 +160,16 @@ int green_join(green_t *thread, void **res)
             swapcontext(susp->context, next->context);
         else printf("????????\n");
     }
-    res = thread->retval;
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
+
+    if(res != NULL)
+    {
+        *res = thread->retval;
+    }
 
     // free context 
     free(thread->context->uc_stack.ss_sp);
     free(thread->context);
-    sigprocmask(SIG_UNBLOCK, &block, NULL);
     return 0;
 }
 
@@ -175,10 +182,12 @@ void green_cond_wait(green_cond_t *cond)
 {
     green_t *susp = running;
 
+    sigprocmask(SIG_BLOCK, &block, NULL);
     queue_thread(&(cond->queue), susp);
-
+    
     // select the next thread for execution
     green_t *next = rpop();
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
 
     running = next;
     swapcontext(susp->context, next->context);
@@ -186,9 +195,10 @@ void green_cond_wait(green_cond_t *cond)
 
 void green_cond_signal(green_cond_t *cond)
 {
+    sigprocmask(SIG_BLOCK, &block, NULL);
     rqueue(pop_thread(&(cond->queue)));
+    sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
-
 
 void queue_thread(green_t **queue, green_t *thread)
 {
@@ -200,7 +210,6 @@ void queue_thread(green_t **queue, green_t *thread)
     else
     {
         green_t *h = *queue;
-        assert(thread->id != -1);
         while(h->next != NULL)
         {
             h = h->next;
