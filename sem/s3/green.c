@@ -26,9 +26,6 @@ static green_t main_green = {
 
 static sigset_t block;
 
-struct green_t *rq_head;
-struct green_t *rq_tail;
-
 static green_t *running = &main_green;
 
 void green_thread();
@@ -116,11 +113,10 @@ void green_thread()
     this->zombie = TRUE;
 
     // find the next thread to run
-    green_t *next = rpop();
+    rpop();
     //if(next == NULL) return;
 
-    running = next;
-    setcontext(next->context);
+    setcontext(running->context);
     sigprocmask(SIG_UNBLOCK, &block, NULL);
 }
 
@@ -133,10 +129,9 @@ int green_yield()
     rqueue(susp);
 
     // select the next thread for execution 
-    green_t *next = rpop();
+    rpop();
 
-    running = next;
-    swapcontext(susp->context, next->context);
+    swapcontext(susp->context, running->context);
     sigprocmask(SIG_UNBLOCK, &block, NULL);
     return 0;
 }
@@ -153,12 +148,8 @@ int green_join(green_t *thread, void **res)
         //jqueue_thread(&thread->join, susp);
 
         // select the next thread for execution
-        green_t *next = rpop();
-
-        running = next;
-        if(next != NULL)
-            swapcontext(susp->context, next->context);
-        else printf("????????\n");
+        rpop();
+        swapcontext(susp->context, running->context);
     }
     sigprocmask(SIG_UNBLOCK, &block, NULL);
 
@@ -192,17 +183,16 @@ void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
     }
 
     // select the next thread for execution
-    green_t *next = rpop();
-
-    running = next;
-    swapcontext(susp->context, next->context);
+    rpop();
+    swapcontext(susp->context, running->context);
 
     if(mutex != NULL)
     {
         while(mutex->taken)
         {
             queue_thread(&mutex->queue, susp);
-            rqueue(rpop());
+            rpop();
+            swapcontext(susp->context, running->context);
         }
         mutex->taken = TRUE;
 
@@ -221,6 +211,7 @@ int green_mutex_init(green_mutex_t *mutex)
 {
     mutex->taken = FALSE;
     // init other fields
+    return 0;
 }
 
 int green_mutex_lock(green_mutex_t *mutex)
@@ -233,9 +224,8 @@ int green_mutex_lock(green_mutex_t *mutex)
         // suspend current thread
         queue_thread(&mutex->queue, susp);
         // find next thread
-        green_t *next = rpop();
-        running = next;
-        swapcontext(susp->context, next->context);
+        rpop();
+        swapcontext(susp->context, running->context);
     }
     else
     {
@@ -244,31 +234,26 @@ int green_mutex_lock(green_mutex_t *mutex)
     }
 
     sigprocmask(SIG_UNBLOCK, &block, NULL);
+    return 0;
 }
 int green_mutex_unlock(green_mutex_t *mutex)
 {
     sigprocmask(SIG_BLOCK, &block, NULL);
-    if(mutex->queue != NULL)
-    {
-        rqueue(pop_thread(&mutex->queue));
-    }
-    else
-    {
-        mutex->taken = FALSE;
-    }
+    rqueue(pop_thread(&mutex->queue));
+    mutex->taken = FALSE;
     sigprocmask(SIG_UNBLOCK, &block, NULL);
+    return 0;
 }
 
 void queue_thread(green_t **queue, green_t *thread)
 {
-    if(queue == NULL) return;
-    else if(*queue == NULL)
+    green_t* h = *queue;
+    if(h == NULL)
     {
         *queue = thread;
     }
     else
     {
-        green_t *h = *queue;
         while(h->next != NULL)
         {
             h = h->next;
@@ -290,28 +275,10 @@ green_t *pop_thread(green_t **queue)
 
 void rqueue(green_t *thread)
 {
-    if(thread == NULL) return;
-    if(rq_tail != NULL)
-    {
-        rq_tail->next = thread;
-    }
-    else
-    {
-        rq_head = thread;
-    }
-
-    rq_tail = thread;
+    queue_thread(&running, thread);
 }
 
 green_t* rpop()
 {
-    green_t *tmp = rq_head;
-    if(rq_head != NULL)
-    {
-        rq_head = rq_head->next;
-        if(rq_head == NULL)
-            rq_tail = NULL;
-
-    }
-    return tmp;
+    return pop_thread(&running);
 }
