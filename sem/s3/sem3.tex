@@ -1,0 +1,48 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage{graphicx}
+\def\code#1{\texttt{#1}}
+\begin{document}
+
+\title{\vspace{4.0cm}Operating Systems - Seminar 3 Report}
+\author{Pontus Asp}
+\date{\today}
+\maketitle
+\thispagestyle{empty}
+\pagenumbering{roman}
+\newpage
+
+\tableofcontents
+\newpage
+
+\clearpage
+\pagenumbering{arabic}
+
+% Write here ->
+\section{Introduction}
+In this article I will write about my progress on writing a thread library (from skeleton code) for seminar 3 in the operating systems course at KTH. Before I started coding I learned from last time that getting the debugger up and running is a good starting point, so that's what I did. After I got the debugger working I started reading through the pdf to have a better overview of the structure of the thread. I felt like multi-threading is hard enough by itself so I did not want to get stuck just because I was too lazy to be a little bit better prepared. However maybe I should not say this since I did not even finish the multi-threading assignment we had earlier in the course.
+
+\section{Let's start coding - Managing contexts}
+Now that I felt done preparing I started reading the pdf from the start again and started implementing the skeleton code. This section will be dedicated to the functions \code{green\_create/3}, \code{green\_yield/0} and \code{green\_join/2}.
+\newline Additionally, it took me a little while to understand what the \code{context} word ment. But after a while I realized that the context should literally be like the context of each thread - i.e. something that keeps track of the stack, variables and where a thread is currently executing. So to sum it up, a context is essenitally an image of the state of a thread and this is how we can switch between the different threads - by switching out which context is currently active.
+
+\subsection{Creating a thread structure}
+The create function (\code{green\_create/3}) is responsible for initializing all the values needed for a thread, for instance creating a seperate context for the new thread and initializing that context to start in the desired function we want to run the thread in.
+If I would be creating this function from the ground up I would probably have some issues trying to figure out everything we would need to save for a thead - and well I did not know about contexts before so that would probably take me a while to solve.
+
+\subsection{Yield, thread!}
+The yield function (\code{green\_yield/0}) is a the function that should be called from a thread when it is time for the thread to rest and put another one in charge. From the start we implemented this in a way so that the threads would call it manually to release control. But since this could lead to other threads never getting control if the current thread would get stuck in an infinite loop or, never give up control, we later changed this to be called via a timer interrupt.
+Creating the yield function was very easy compared to the other context managing functions - but it was also the shortest with the least amount of logic so this is not very surprising after having finished it.
+
+\subsection{The join operation}
+The join operation (\code{green\_join/2}), is a function that manages a context that needs to wait for a result from another thread (when it is done executing) or simply to wait for it to finish. In addition to this the join operation also clears up the resources used by the thread that was given to join when it finally joins after being done with its execution. This function was the one I had most issues programming because I was unsure of who would be ``joining'' who and which thread would be the one to execute after checking if the thread we wanted to join was a zombie or not. Now after understanding it fully, I would say it is pretty simple - but it took a while to get there so I would understand if people had issues understanding exactly what is going on here.
+
+\section{Writing a little test}
+So now that we have written quite a bit of code - it would be very nice with a test. Fortunately Johan did put a test at this point in the assignment - and it was a good thing he did. Writing the test was easy, especially since we were given the complete code. However what followed was harder, segmentation faults. But luckily enough, as I said in the introduction,  I had a debugger set up from the start this time. I found that the first segmentation fault was in my \code{green\_join/2} function. It took me a long time to figure out exactly what the issue was, but eventually I found out that there was nothing wrong directly with the code in the seminar (yet), it was the helper function I created for queueing and popping threads from the ready queue. I built it so that I had a reference to the head and the tail, and when popping the last element from the head I forgot to clear the reference at the tail, which made the head set to \code{NULL}, while the tail still saying we had one item in the queue. When finally finding this issue and I simply cleared the tail it worked, kind of. It would still run into issues occasionally but I decided to continue with the rest of the implementation anyways since I could not find any more bugs. (I did find it in later tests though so I will bring it up then).
+
+\section{Suspending threads}
+So far we have not implemented any kind of locks for our threads - this might seem like a really bad idea, and normally it is, at least in a fully developed threading library with locks in place. But so far this has been fine since we know what we have been doing. In our test we run the work on each thread and let the thread decide when to pass the active context to the next thread in the queue using \code{green\_yield/0}. So since we decided when to switch thread this has not been a problem, but as mentioned earlier this would not be a good idea since threads could potentially run into issues in larger programs and freeze the whole system if it never gives back control. So to fix this potential issue we will start with making this a bit better by suspending on conditions.
+
+
+% Write here <--
+
+\end{document}
