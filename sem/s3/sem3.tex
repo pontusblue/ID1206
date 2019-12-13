@@ -43,16 +43,30 @@ So now that we have written quite a bit of code - it would be very nice with a t
 So far we have not implemented any kind of locks for our threads - this might seem like a really bad idea, and normally it is, at least in a fully developed threading library with locks in place. But so far this has been fine since we know what we have been doing. In our test we run the work on each thread and let the thread decide when to pass the active context to the next thread in the queue using \code{green\_yield/0}. So since we decided when to switch thread this has not been a problem, but as mentioned earlier this would not be a good idea since threads could potentially run into issues in larger programs and freeze the whole system if it never gives back control. So as a start to fix this issue we will start with making this a bit better by suspending on conditions.
 
 \subsection{Initializing a condition}
-The first step in creating a condition would be initializing it. The structure simply contains a single value, which is the queue that decides which thread is currently in control. Implementing this was not hard, the only thing I had to think about was if it really was as easy as it seemed, and it was.
+The first step in creating a condition would be initializing it (\code{green\_cond\_init/1}). The structure simply contains a single value, which is the queue that decides which thread is currently in control. Implementing this was not hard, the only thing I had to think about was if it really was as easy as it seemed, and it was.
 
 \subsection{Wait for your turn}
-At this point we want to create some function that can make a thread wait if it does not have anything to do during its allocated time. So to solve this we have the wait function, which from the start only switched to the next thread that was in queue to run.
+At this point we want to create some function (\code{green\_cond\_wait/1}) that can make a thread wait if it does not have anything to do during its allocated time, instead of wasting precious clock cycles. So to solve this we have the wait function, the first version of this function was pretty straight forward - find the next thread to run and the running thread puts itself on the condition queue to be ran again sometime later.
 
 \subsection{Sound the signal!}
-Making all the threads sleep or simply just wait would make my life easy - deadlocks on purpose. But in reality we do not want any deadlocks, so to not make all the threads go to sleep we need to wake up the next thread in the queue and switch to their context.
+Making all the threads sleep or simply just wait would make my life easy - deadlocks on purpose. But in reality we do not want any deadlocks since nothing would be working, so to not make all the threads go to sleep we need to wake up the next thread in the queue and switch to their context. This is what the function \code{green\_cond\_signal/1} is made for. When this function is called, the first thread in the conditional queue will be moved to the ready queue. By doing this that thread will be ran as soon as it gets its turn.
 
 \subsection{Updating the test}
-After adding this new functionality we of course want to use it! So to use it we will update the old test function and add a few lines.
+After adding this new functionality we of course want to use it! So to be able to use it we will have to update the old test function and add a few lines. The essential change is that we have a flag that decides which thread will enter an if block, if they do, they update the flag and update their loop count. After that they use \code{green\_cond\_signal/1} to wake up one of the threads that did not go in to the if block. The threads that did not go in to the if block instead hit the \code{green\_cond\_wait/1} function and is sitting and waiting for a signal. We still have one problem though - the programs themselves still decide when it is time for a thread to give back control, so in the next section we will look into that.
+
+\section{Adding a timer interrupt}
+To solve the problem with threads possibly being given control that they never give back we will introduce timer interrupts that automatically calls the \code{green\_yield/0} function for them.
+All we basically needed to do was inizialize the timer in our \code{init/0} function and give it the function to call when the timer ran out. This was not enough however - we ran into strange behaviour since we now did not have any control of when a thread would give back the control. To fix this we had to block the timer from interrupting during volatile operations such as when we are changing the state of the green threads. There is one problem with this though and it is if we would have volatile operations that the threads will work with that is in their workload - what the programmers write when using this library. To give the programmers some way to write code that works in paralell with shared resources between the threads we will introduce mutexes.
+
+\section{A Mutex for the programmers}
+Who knew that a thread library maybe should include a way for the developers using it to write code that works with shared resources, oh well but here we are doing just that. This was of course a joke, if not for the mutexes I would probable have had my OS die multiple times just trying to write this file. Since this report is getting a bit long I will try to write about this in a bit more space efficient way. When implementing the mutex functionality we made 3 functions - the good 'ol init function that only initializes our mutex structure, a locking function, which is made for threads to be able to "claim" the spotlight for a resource - making all the other threads having to wait if they want to claim the save mutex. Then we also of course made the opposite one - the unlock function, which just gives control to the next thread in line, or just unlocks the mutex if no one is waiting for it.
+
+\section{A final little update}
+The test is once again outdated, now with the power of mutexes we want to lock down access of the \code{flag} variable so that only one thread can read and write to it at a time, this saves us from the small chance that two threads would enter the if statement at the same time, or two threads trying to increment the flag at the same time.
+
+\section{Benchmarks}
+There are none.
+
 
 % Write here <--
 
