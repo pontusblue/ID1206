@@ -18,7 +18,7 @@ void *test(void *arg)
         green_mutex_lock(&mutex);
         while(flag != id)
         {
-            green_mutex_unlock(&mutex);
+            //green_mutex_unlock(&mutex);
             green_cond_wait(&cond, &mutex);
             //maybe add new mutex here??
         }

@@ -178,8 +178,9 @@ void green_cond_wait(green_cond_t *cond, green_mutex_t *mutex)
 
     if(mutex != NULL)
     {
+        rqueue(mutex->queue);
         mutex->taken = FALSE;
-        rqueue(pop_thread(&mutex->queue));
+        mutex->queue = NULL;
     }
 
     // select the next thread for execution
@@ -210,7 +211,7 @@ void green_cond_signal(green_cond_t *cond)
 int green_mutex_init(green_mutex_t *mutex)
 {
     mutex->taken = FALSE;
-    // init other fields
+    mutex->queue = NULL;
     return 0;
 }
 
@@ -219,7 +220,7 @@ int green_mutex_lock(green_mutex_t *mutex)
     sigprocmask(SIG_BLOCK, &block, NULL);
 
     green_t *susp = running;
-    if(mutex->taken)
+    while(mutex->taken)
     {
         // suspend current thread
         queue_thread(&mutex->queue, susp);
@@ -227,11 +228,8 @@ int green_mutex_lock(green_mutex_t *mutex)
         rpop();
         swapcontext(susp->context, running->context);
     }
-    else
-    {
-        // take the lock
-        mutex->taken = TRUE;
-    }
+
+    mutex->taken = TRUE;
 
     sigprocmask(SIG_UNBLOCK, &block, NULL);
     return 0;
@@ -239,7 +237,7 @@ int green_mutex_lock(green_mutex_t *mutex)
 int green_mutex_unlock(green_mutex_t *mutex)
 {
     sigprocmask(SIG_BLOCK, &block, NULL);
-    rqueue(pop_thread(&mutex->queue));
+    rqueue(mutex->queue);
     mutex->taken = FALSE;
     sigprocmask(SIG_UNBLOCK, &block, NULL);
     return 0;

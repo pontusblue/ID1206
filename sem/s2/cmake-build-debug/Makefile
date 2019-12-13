@@ -48,10 +48,10 @@ RM = /home/pontus/.local/share/JetBrains/Toolbox/apps/CLion/ch-0/193.5233.144/bi
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/pontus/Dev/kth/ID1206/sem/s3
+CMAKE_SOURCE_DIR = /home/pontus/Dev/kth/ID1206/sem/s2
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/pontus/Dev/kth/ID1206/sem/s3/cmake-build-debug
+CMAKE_BINARY_DIR = /home/pontus/Dev/kth/ID1206/sem/s2/cmake-build-debug
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pontus/Dev/kth/ID1206/sem/s3/cmake-build-debug/CMakeFiles /home/pontus/Dev/kth/ID1206/sem/s3/cmake-build-debug/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pontus/Dev/kth/ID1206/sem/s2/cmake-build-debug/CMakeFiles /home/pontus/Dev/kth/ID1206/sem/s2/cmake-build-debug/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/pontus/Dev/kth/ID1206/sem/s3/cmake-build-debug/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/pontus/Dev/kth/ID1206/sem/s2/cmake-build-debug/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -111,44 +111,71 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named s3
+# Target rules for targets named s2
 
 # Build rule for target.
-s3: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 s3
-.PHONY : s3
+s2: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 s2
+.PHONY : s2
 
 # fast build rule for target.
-s3/fast:
-	$(MAKE) -f CMakeFiles/s3.dir/build.make CMakeFiles/s3.dir/build
-.PHONY : s3/fast
+s2/fast:
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/build
+.PHONY : s2/fast
 
-green.o: green.c.o
+bench.o: bench.c.o
 
-.PHONY : green.o
+.PHONY : bench.o
 
 # target to build an object file
-green.c.o:
-	$(MAKE) -f CMakeFiles/s3.dir/build.make CMakeFiles/s3.dir/green.c.o
-.PHONY : green.c.o
+bench.c.o:
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/bench.c.o
+.PHONY : bench.c.o
 
-green.i: green.c.i
+bench.i: bench.c.i
 
-.PHONY : green.i
+.PHONY : bench.i
 
 # target to preprocess a source file
-green.c.i:
-	$(MAKE) -f CMakeFiles/s3.dir/build.make CMakeFiles/s3.dir/green.c.i
-.PHONY : green.c.i
+bench.c.i:
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/bench.c.i
+.PHONY : bench.c.i
 
-green.s: green.c.s
+bench.s: bench.c.s
 
-.PHONY : green.s
+.PHONY : bench.s
 
 # target to generate assembly for a file
-green.c.s:
-	$(MAKE) -f CMakeFiles/s3.dir/build.make CMakeFiles/s3.dir/green.c.s
-.PHONY : green.c.s
+bench.c.s:
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/bench.c.s
+.PHONY : bench.c.s
+
+dlmall.o: dlmall.c.o
+
+.PHONY : dlmall.o
+
+# target to build an object file
+dlmall.c.o:
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/dlmall.c.o
+.PHONY : dlmall.c.o
+
+dlmall.i: dlmall.c.i
+
+.PHONY : dlmall.i
+
+# target to preprocess a source file
+dlmall.c.i:
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/dlmall.c.i
+.PHONY : dlmall.c.i
+
+dlmall.s: dlmall.c.s
+
+.PHONY : dlmall.s
+
+# target to generate assembly for a file
+dlmall.c.s:
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/dlmall.c.s
+.PHONY : dlmall.c.s
 
 test.o: test.c.o
 
@@ -156,7 +183,7 @@ test.o: test.c.o
 
 # target to build an object file
 test.c.o:
-	$(MAKE) -f CMakeFiles/s3.dir/build.make CMakeFiles/s3.dir/test.c.o
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/test.c.o
 .PHONY : test.c.o
 
 test.i: test.c.i
@@ -165,7 +192,7 @@ test.i: test.c.i
 
 # target to preprocess a source file
 test.c.i:
-	$(MAKE) -f CMakeFiles/s3.dir/build.make CMakeFiles/s3.dir/test.c.i
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/test.c.i
 .PHONY : test.c.i
 
 test.s: test.c.s
@@ -174,7 +201,7 @@ test.s: test.c.s
 
 # target to generate assembly for a file
 test.c.s:
-	$(MAKE) -f CMakeFiles/s3.dir/build.make CMakeFiles/s3.dir/test.c.s
+	$(MAKE) -f CMakeFiles/s2.dir/build.make CMakeFiles/s2.dir/test.c.s
 .PHONY : test.c.s
 
 # Help Target
@@ -184,11 +211,14 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... rebuild_cache"
-	@echo "... s3"
+	@echo "... s2"
 	@echo "... edit_cache"
-	@echo "... green.o"
-	@echo "... green.i"
-	@echo "... green.s"
+	@echo "... bench.o"
+	@echo "... bench.i"
+	@echo "... bench.s"
+	@echo "... dlmall.o"
+	@echo "... dlmall.i"
+	@echo "... dlmall.s"
 	@echo "... test.o"
 	@echo "... test.i"
 	@echo "... test.s"
