@@ -62,10 +62,11 @@ All we basically needed to do was inizialize the timer in our \code{init/0} func
 Who knew that a thread library maybe should include a way for the developers using it to write code that works with shared resources, oh well but here we are doing just that. This was of course a joke, if not for the mutexes I would probable have had my OS die multiple times just trying to write this file. Since this report is getting a bit long I will try to write about this in a bit more space efficient way. When implementing the mutex functionality we made 3 functions - the good 'ol init function that only initializes our mutex structure, a locking function, which is made for threads to be able to "claim" the spotlight for a resource - making all the other threads having to wait if they want to claim the save mutex. Then we also of course made the opposite one - the unlock function, which just gives control to the next thread in line, or just unlocks the mutex if no one is waiting for it.
 
 \section{A final little update}
-The test is once again outdated, now with the power of mutexes we want to lock down access of the \code{flag} variable so that only one thread can read and write to it at a time, this saves us from the small chance that two threads would enter the if statement at the same time, or two threads trying to increment the flag at the same time.
+The test is once again outdated... but now, with the power of mutexes we want to lock down access of the \code{flag} variable so that only one thread can read and write to it at a time, this saves us from the small chance that two threads would enter the if statement at the same time, or two threads trying to increment the flag at the same time.
 
 \section{Benchmarks}
-There are none.
+There are none.\\
+I was going to benchmark the performance gain (or probably loss since we are running on a single core) when splitting up work between an increasing amount of threads. But after making the amount of threads dynamic I realized I have some issue of getting segmentation faults after a few hundred/thousand iterations when I had more than 2 threads. Since it did take at least a few hundred, often over a thousand iterations on each thread before getting any issues, I am assuming there is something wrong with my test rather than the thread implementation. But really, I am not sure where to start - and this report is long as it is already so I will leave it as a hypothesis.
 
 
 % Write here <--
